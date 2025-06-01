@@ -27,7 +27,7 @@ public class Token
     [Required]
     public DateTime Expires { get; set; }
 
-    public bool BlackListed { get; set; } = false;
+    public bool Blacklisted { get; set; } = false;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
