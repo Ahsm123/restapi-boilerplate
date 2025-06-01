@@ -1,4 +1,4 @@
-﻿using Api.Dtos;
+﻿using Api.Dtos.UserDtos;
 using Api.Exceptions;
 using Api.Interfaces;
 using Api.Models;

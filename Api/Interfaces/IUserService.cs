@@ -1,4 +1,4 @@
-﻿using Api.Dtos;
+﻿using Api.Dtos.UserDtos;
 
 namespace Api.Interfaces;
 

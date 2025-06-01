@@ -4,6 +4,7 @@ namespace Api.Models;
 
 public enum TokenType
 {
+    Access,
     Refresh,
     ResetPassword,
     VerifyEmail

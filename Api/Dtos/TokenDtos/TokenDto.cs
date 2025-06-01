@@ -1,6 +1,6 @@
 ﻿using Api.Models;
 
-namespace Api.Dtos;
+namespace Api.Dtos.TokenDtos;
 
 public class TokenDto
 {

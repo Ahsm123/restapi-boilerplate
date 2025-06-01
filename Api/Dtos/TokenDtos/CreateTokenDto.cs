@@ -1,7 +1,7 @@
 ﻿using Api.Models;
 using System.ComponentModel.DataAnnotations;
 
-namespace Api.Dtos;
+namespace Api.Dtos.TokenDtos;
 
 public class CreateTokenDto
 {
