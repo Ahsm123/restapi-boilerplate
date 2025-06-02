@@ -4,12 +4,14 @@ using Api.Dtos.UserDtos;
 using Api.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace Api.Controllers;
 
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
+[EnableRateLimiting("AuthPolicy")]
 [ApiController]
 public class AuthController : ControllerBase
 {
