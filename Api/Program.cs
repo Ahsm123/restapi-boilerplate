@@ -1,5 +1,7 @@
 using Api.Configuration;
+using Api.Data;
 using Api.Interfaces;
+using Api.Middleware;
 using Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -44,10 +46,11 @@ builder.Services.AddAuthorization();
 // My services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // My repositories
-//builder.Services.AddScoped<IUserRepository, UserRepository>();
-//builder.Services.AddScoped<ITokenRepository, TokenRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 
 
 var app = builder.Build();
@@ -57,6 +60,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 app.UseHttpsRedirection();
 
