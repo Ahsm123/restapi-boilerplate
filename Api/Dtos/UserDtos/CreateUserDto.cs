@@ -5,13 +5,14 @@ namespace Api.Dtos.UserDtos;
 public class CreateUserDto
 {
     [Required]
-    public string Name { get; set; }
+    [MaxLength(100)]
+    public required string Name { get; set; }
 
     [Required]
     [EmailAddress]
-    public string Email { get; set; }
+    public required string Email { get; set; }
 
     [Required]
     [MinLength(8)]
-    public string Password { get; set; }
+    public required string Password { get; set; }
 }
