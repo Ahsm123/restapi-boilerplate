@@ -2,6 +2,7 @@
 using Api.Exceptions;
 using Api.Interfaces;
 using Api.Models;
+using Api.Validations;
 
 namespace Api.Services;
 
@@ -14,8 +15,9 @@ public class UserService : IUserService
         _userRepository = userRepository;
     }
 
-    public async Task<UserDto> CreateUserAsync(CreateUserDto userDto)
+    public async Task<UserDto> CreateUserAsync(CreateUserDto userDto, bool isAdminCreating = false)
     {
+        //TODO: add admin created user.
         if (userDto == null)
         {
             throw new ArgumentNullException(nameof(userDto), "User data cannot be null.");
@@ -35,6 +37,9 @@ public class UserService : IUserService
             Name = userDto.Name,
             Email = userDto.Email.ToLowerInvariant(),
             Password = userDto.Password,
+            Role = isAdminCreating && userDto.Role.HasValue
+                    ? userDto.Role.Value
+                    : UserRole.User, // Default role for regular registration
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };
@@ -43,10 +48,68 @@ public class UserService : IUserService
         return MapToDto(createdUser);
     }
 
-    public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
+    public async Task<PaginatedResultDto<UserDto>> GetAllUsersAsync(UserQueryDto query)
     {
-        var users = await _userRepository.GetAllAsync();
-        return users.Select(MapToDto);
+        if (query == null)
+            throw new ArgumentNullException(nameof(query));
+
+        // TODO: implement in IUserRepository
+        // For now, simplified version:
+        var allUsers = await _userRepository.GetAllAsync();
+
+        // Apply filtering
+        var filteredUsers = allUsers.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(query.Name))
+        {
+            filteredUsers = filteredUsers.Where(u =>
+                u.Name.Contains(query.Name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (query.Role.HasValue)
+        {
+            filteredUsers = filteredUsers.Where(u => u.Role == query.Role.Value);
+        }
+
+        // Apply sorting
+        if (!string.IsNullOrWhiteSpace(query.SortBy))
+        {
+            var sortParts = query.SortBy.Split(':');
+            var field = sortParts[0].ToLower();
+            var direction = sortParts.Length > 1 ? sortParts[1].ToLower() : "asc";
+
+            filteredUsers = field switch
+            {
+                "name" => direction == "desc"
+                    ? filteredUsers.OrderByDescending(u => u.Name)
+                    : filteredUsers.OrderBy(u => u.Name),
+                "email" => direction == "desc"
+                    ? filteredUsers.OrderByDescending(u => u.Email)
+                    : filteredUsers.OrderBy(u => u.Email),
+                "createdat" => direction == "desc"
+                    ? filteredUsers.OrderByDescending(u => u.CreatedAt)
+                    : filteredUsers.OrderBy(u => u.CreatedAt),
+                _ => filteredUsers.OrderBy(u => u.Name)
+            };
+        }
+
+        var totalResults = filteredUsers.Count();
+        var totalPages = (int)Math.Ceiling((double)totalResults / query.Limit);
+
+        // Apply pagination
+        var paginatedUsers = filteredUsers
+            .Skip((query.Page - 1) * query.Limit)
+            .Take(query.Limit)
+            .ToList();
+
+        return new PaginatedResultDto<UserDto>
+        {
+            Results = paginatedUsers.Select(MapToDto),
+            Page = query.Page,
+            Limit = query.Limit,
+            TotalPages = totalPages,
+            TotalResults = totalResults
+        };
     }
 
     public async Task<UserDto> GetUserByIdAsync(Guid id)
@@ -84,6 +147,7 @@ public class UserService : IUserService
                 throw new EmailAlreadyTakenException(updateDto.Email);
 
             user.Email = updateDto.Email.ToLowerInvariant();
+            user.IsEmailVerified = false; // Reset verification on change
         }
 
         if (!string.IsNullOrWhiteSpace(updateDto.Name))
@@ -93,6 +157,9 @@ public class UserService : IUserService
         {
             // TODO: Validate password strength
             // TODO: Hash password
+            if (!PasswordValidator.IsValid(updateDto.Password))
+                throw new WeakPasswordException();
+
             user.Password = updateDto.Password;
         }
 

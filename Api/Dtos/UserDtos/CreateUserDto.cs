@@ -1,11 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Api.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace Api.Dtos.UserDtos;
 
 public class CreateUserDto
 {
     [Required]
-    [MaxLength(100)]
+    [StringLength(100)]
     public required string Name { get; set; }
 
     [Required]
@@ -15,4 +16,7 @@ public class CreateUserDto
     [Required]
     [MinLength(8)]
     public required string Password { get; set; }
+
+    //Only admin can set this role when creating a user, defaults to User
+    public UserRole? Role { get; set; }
 }
