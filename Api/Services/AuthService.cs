@@ -87,7 +87,7 @@ public class AuthService : IAuthService
         await _tokenService.RevokeTokenAsync(refreshToken);
     }
 
-    public async Task<AuthTokensDto> RefreshsTokenAsync(string refreshToken)
+    public async Task<AuthTokensDto> RefreshTokensAsync(string refreshToken)
     {
         return await _tokenService.RefreshTokensAsync(refreshToken);
     }
