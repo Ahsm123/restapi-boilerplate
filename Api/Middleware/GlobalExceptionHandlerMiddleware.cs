@@ -47,6 +47,8 @@ namespace Api.Middleware
                 InvalidTokenException => (HttpStatusCode.Unauthorized, "Invalid token"),
                 ValidationException => (HttpStatusCode.BadRequest, exception.Message),
                 ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
+                EmailDeliveryException => (HttpStatusCode.InternalServerError, $"Failed to send email: {exception.Message}"),
+                EmailConfigurationException => (HttpStatusCode.InternalServerError, $"Email configuration error: {exception.Message}"),
                 _ => (HttpStatusCode.InternalServerError, "An error occurred while processing your request")
             };
 

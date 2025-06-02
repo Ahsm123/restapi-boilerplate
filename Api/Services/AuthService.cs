@@ -12,14 +12,16 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly ITokenService _tokenService;
-    //TODO: Add EmailService when implemented
+    private readonly IEmailService _emailService;
 
     public AuthService(
         IUserRepository userRepository,
-        ITokenService tokenService)
+        ITokenService tokenService,
+        IEmailService emailService)
     {
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+        _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
     }
 
     public async Task<AuthResponse> RegisterAsync(CreateUserDto dto)
@@ -47,9 +49,8 @@ public class AuthService : IAuthService
         var createdUser = await _userRepository.CreateAsync(user);
         var tokens = await _tokenService.GenerateAuthTokensAsync(createdUser);
 
-        //TODO: Send verification email
-        // var verifyEmailToken = await _tokenService.GenerateVerifyEmailTokenAsync(createdUser);
-        // await _emailService.SendVerificationEmailAsync(createdUser.Email, verifyEmailToken);
+        var verifyEmailToken = await _tokenService.GenerateVerifyEmailTokenAsync(createdUser);
+        await _emailService.SendVerificationEmailAsync(createdUser.Email, verifyEmailToken);
 
         return new AuthResponse
         {
@@ -67,11 +68,10 @@ public class AuthService : IAuthService
             throw new InvalidCredentialsException();
         }
 
-        //TODO: Enforce email verification
-        //if (!user.IsEmailVerified)
-        //{
-        //    throw new EmailNotVerifiedException(user.Email);
-        //}
+        if (!user.IsEmailVerified)
+        {
+            throw new EmailNotVerifiedException();
+        }
 
         var tokens = await _tokenService.GenerateAuthTokensAsync(user);
 
@@ -98,8 +98,7 @@ public class AuthService : IAuthService
         try
         {
             var resetToken = await _tokenService.GenerateResetPasswordTokenAsync(email);
-            //TODO: Send email
-            // await _emailService.SendPasswordResetEmailAsync(email, resetToken);
+            await _emailService.SendResetPasswordEmailAsync(email, resetToken);
         }
         catch (UserNotFoundException)
         {
@@ -142,9 +141,9 @@ public class AuthService : IAuthService
             return; // No need to send if already verified
         }
 
-        var verifyEmailToken = await _tokenService.GenerateVerifyEmailTokenAsync(user);
-        //TODO: Send verification email
-        // await _emailService.SendVerificationEmailAsync(user.Email, verifyEmailToken);
+        var verificationToken = await _tokenService.GenerateVerifyEmailTokenAsync(user);
+        await _emailService.SendVerificationEmailAsync(user.Email, verificationToken);
+
     }
 
     public async Task VerifyEmailAsync(string token)
@@ -160,6 +159,7 @@ public class AuthService : IAuthService
 
         await _userRepository.UpdateAsync(user);
         await _tokenService.RevokeTokenAsync(token);
+        await _emailService.SendWelcomeEmailAsync(user.Email, user.Name);
     }
 
     private static UserDto MapToUserDto(User user)

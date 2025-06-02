@@ -20,6 +20,10 @@ builder.Services.Configure<JwtSettings>(
 
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>();
 
+//Email Configuration
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection(EmailSettings.SectionName));
+
 //Add Auth
 builder.Services.AddAuthentication(options =>
 {
@@ -47,6 +51,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 
 // My repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
