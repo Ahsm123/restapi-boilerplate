@@ -41,7 +41,7 @@ public class AuthService : IAuthService
             Id = Guid.NewGuid(),
             Name = dto.Name,
             Email = dto.Email.ToLowerInvariant(),
-            Password = dto.Password, //TODO: Implement password hasher with BCrypt
+            Password = PasswordHasher.HashPassword(dto.Password),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -61,9 +61,14 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginDto dto)
     {
+        if (dto == null)
+        {
+            throw new ArgumentNullException(nameof(dto));
+        }
+
         var user = await _userRepository.GetByEmailAsync(dto.Email.ToLowerInvariant());
 
-        if (user == null || user.Password != dto.Password) //TODO: Implement password hasher with BCrypt
+        if (user == null || !PasswordHasher.VerifyPassword(dto.Password, user.Password))
         {
             throw new InvalidCredentialsException();
         }
@@ -121,7 +126,7 @@ public class AuthService : IAuthService
             throw new UserNotFoundException(tokenRecord.UserId);
         }
 
-        user.Password = newPassword; //TODO: Implement password hasher with BCrypt
+        user.Password = PasswordHasher.HashPassword(newPassword);
         user.UpdatedAt = DateTime.UtcNow;
 
         await _userRepository.UpdateAsync(user);
@@ -138,7 +143,7 @@ public class AuthService : IAuthService
 
         if (user.IsEmailVerified)
         {
-            return; // No need to send if already verified
+            return; //Already verified
         }
 
         var verificationToken = await _tokenService.GenerateVerifyEmailTokenAsync(user);

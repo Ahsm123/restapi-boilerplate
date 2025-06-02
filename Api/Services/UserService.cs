@@ -17,7 +17,6 @@ public class UserService : IUserService
 
     public async Task<UserDto> CreateUserAsync(CreateUserDto userDto, bool isAdminCreating = false)
     {
-        //TODO: add admin created user.
         if (userDto == null)
         {
             throw new ArgumentNullException(nameof(userDto), "User data cannot be null.");
@@ -28,15 +27,17 @@ public class UserService : IUserService
             throw new EmailAlreadyTakenException(userDto.Email);
         }
 
-        //TODO: Add password validation
-        //TODO: Hash password
+        if (!PasswordValidator.IsValid(userDto.Password))
+        {
+            throw new WeakPasswordException();
+        }
 
         var user = new User
         {
             Id = Guid.NewGuid(),
             Name = userDto.Name,
             Email = userDto.Email.ToLowerInvariant(),
-            Password = userDto.Password,
+            Password = PasswordHasher.HashPassword(userDto.Password),
             Role = isAdminCreating && userDto.Role.HasValue
                     ? userDto.Role.Value
                     : UserRole.User, // Default role for regular registration
@@ -54,7 +55,7 @@ public class UserService : IUserService
             throw new ArgumentNullException(nameof(query));
 
         // TODO: implement in IUserRepository
-        // For now, simplified version:
+        // simplified version:
         var allUsers = await _userRepository.GetAllAsync();
 
         // Apply filtering
@@ -155,12 +156,10 @@ public class UserService : IUserService
 
         if (!string.IsNullOrWhiteSpace(updateDto.Password))
         {
-            // TODO: Validate password strength
-            // TODO: Hash password
             if (!PasswordValidator.IsValid(updateDto.Password))
                 throw new WeakPasswordException();
 
-            user.Password = updateDto.Password;
+            user.Password = PasswordHasher.HashPassword(updateDto.Password);
         }
 
         if (updateDto.IsEmailVerified.HasValue)
